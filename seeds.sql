@@ -2,16 +2,16 @@ USE employees_DB;
 
 ----- Department Seeds -----
 
-INSERT INTO department (id, name)
+INSERT INTO department (id, department_name)
 VALUES (1, "Sales");
 
-INSERT INTO department (id, name)
+INSERT INTO department (id, department_name)
 VALUES (2, "IT");
 
-INSERT INTO department (id, name)
+INSERT INTO department (id, department_name)
 VALUES (3, "HR");
 
-INSERT INTO department (id, name)
+INSERT INTO department (id, department_name)
 VALUES (4, "Customer Service");
 
 ----- Role Seeds -----

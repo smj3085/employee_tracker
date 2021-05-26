@@ -19,8 +19,7 @@ connection.connect((err) => {
 
 const init = () => {
     inquirer
-    .prompt([
-        {
+    .prompt({
             name: "select",
             type: "rawlist",
             message: "What would you like to do?",
@@ -41,9 +40,9 @@ const init = () => {
                 "View department budgets",
                 "Exit",
             ],
-    },
-])
+    })
 .then((data) => {
+    console.log("You've chosen: " + data.select);
     switch (data.select) {
         case "View all employees":
         viewEmploy();
@@ -106,7 +105,7 @@ const init = () => {
         break;
 
         default:
-        console.log(`Invalid action: ${answer.action}`);
+        console.log(`Invalid action: ${answer.select}`);
         break;
     }
   });
@@ -114,17 +113,17 @@ const init = () => {
 
 // View all employees
 const viewEmploy = () => {
-    connection.query('SELECT CONCAT(employee.first_name, " ", employee.last_name) AS "Employee Name", role.title, department.name AS "Department", role.salary, CONCAT(manager.first_name, " ", manager.last_name) AS manager FROM employee INNER JOIN role ON employee.role_id = role.id INNER JOIN department ON role.department_id = department.id LEFT JOIN employee manager ON employee.manager_id = manager.id',
-    (err, results) => {
+    connection.query('SELECT * FROM employee', (err, results) => {
       if (err) throw err;
       console.table(results);
+      console.log("Success");
       init();
     }
   );
 };
 
 const viewDep = () => {
-    connection.query('SELECT id, name AS Departments FROM department', 
+    connection.query('SELECT id, department_name AS Departments FROM department', 
     (err, results) => {
         if (err) throw err;
         console.table(results);
@@ -136,27 +135,132 @@ const viewDep = () => {
 const viewRole = () => {
     connection.query(
       `SELECT role.title, role.salary, department.name AS department FROM role INNER JOIN department ON role.department_id = department.id `,
-      (err, res) => {
+      (err, results) => {
         if (err) throw err;
-        console.table(res);
+        console.log("Success");
+        console.table(results);
         init();
       }
     );
   };
-
 
 const viewByManager = () => {
     connection.query(
       `SELECT CONCAT(manager.first_name, " ", manager.last_name) AS manager, CONCAT (employee.first_name, " ",employee.last_name) AS employee
     FROM employee manager
     INNER JOIN employee ON manager.id = employee.manager_id;`,
-      (err, res) => {
+      (err, results) => {
         if (err) throw err;
-        console.table(res);
+        console.table(results);
         init();
       }
     );
 };
 
+const addNewEmploy = () => {
+    inquirer
+      .prompt([
+          {
+          name: 'first_name',
+          type: 'input',
+          message: "What is the employee's first name?",
+        },
+        {
+          name: 'last_name',
+          type: 'input',
+          message: 'What is their surname?',
+        },
+        {
+          name: 'roleId',
+          type: 'input',
+          message: 'What is their role ID?',
+        },
+        {
+          name: 'managerId',
+          type: 'input',
+          message: "What is the manager's ID?", 
+        }
+      ])
+      .then(function(results) {
+        const firstName = results.first_name;
+        const lastName = results.last_name;
+        const roleID = results.roleId;
+        const managerID = results.managerId;
+        const query = `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUE("${firstName}", "${lastName}", "${roleID}", "${managerID}")`;
+        connection.query(query, function(err, results) {
+          if (err) throw err;
+          console.table(results);
+          init();
+        });
+      });
+  }
+//       .then((answer) => {
+//         if (answer.manager === "No Manager") {
+  
+//           let roleId = allRoles.indexOf(answer.role) + 1;
+  
+//           connection.query(
+//             'INSERT INTO employee SET ?', {
+//               first_name: answer.f_name,
+//               last_name: answer.l_name,
+//               role_id: roleId,
+  
+//             },
+//             (err) => {
+//               if (err) throw err;
+//               console.log('Your employee was created successfully!');
+//               start();
+//             }
+//           );
+//         } else {
+  
+//           let roleId = allRoles.indexOf(answer.role) + 1;
+//           let managerId = allManagers.indexOf(answer.manager) + 1;
+  
+//           connection.query(
+//             'INSERT INTO employee SET ?', {
+//               first_name: answer.f_name,
+//               last_name: answer.l_name,
+//               role_id: roleId,
+//               manager_id: managerId,
+//             },
+//             (err) => {
+//               if (err) throw err;
+//               console.log('Your employee was created successfully!');
+//               start();
+//             }
+//           );
+//         }
+//       });
+//   };
+
+//   var allRoles = [];
+
+// function selectRole() {
+//   connection.query("SELECT * FROM role", function (err, res) {
+//     if (err) throw err
+//     for (var i = 0; i < res.length; i++) {
+//       allRoles.push(res[i].role_title);
+//     }
+
+//   })
+
+//   return allRoles;
+// }
+
+// var allManagers = [];
+
+// function selectManager() {
+//   connection.query("SELECT DISTINCT CONCAT( e2.first_name, ' ', e2.last_name ) AS Manager, e1.manager_id FROM employee e1 INNER JOIN employee e2 ON e2.id = e1.manager_id WHERE e1.manager_id IS NOT NULL;",
+//     function (err, res) {
+
+//       if (err) throw err
+//       for (var i = 0; i < res.length; i++) {
+//         allManagers.push(res[i].Manager);
+//       }
+//       allManagers.push("No Manager");
+//     })
+//   return allManagers;
+// }
 
   
