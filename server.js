@@ -1,19 +1,19 @@
-const mysql = require("mysql");
-const inquirer = require("inquirer");
-const consoleTable = require("console.table");
-const config = require("./package.json");
+const mysql = require('mysql'); // For connecting to the MySQL database
+const inquirer = require('inquirer'); // For interacting with the user via the command-line
+const consoleTable = require('console.table'); // For printing MySQL rows to the console in an attractive fashion.
+const { connect } = require('node:http2');
 
 const connection = mysql.createConnection({
     host: 'localhost',
     port: 3306,
     user: 'root',
     password: 'password',
-    database: 'employees_db'
+    database: 'employees_db',
 });
 
 connection.connect((err) => {
     if (err) throw err;
-    console.log("The Employee tracker");
+    console.log("Welcome to the Employee tracker");
     init();
 })
 
@@ -27,25 +27,18 @@ const init = () => {
                 "View all employees",
                 "View departments",
                 "View roles",
-                "View all employees by role",
-                "View all employees by department",
-                "View all employees by manager",
                 "Add employee",
                 "Add role",
                 "Add department",
                 "Update employee role",
-                "Delete employee",
-                "Delete role",
-                "Delete department",
-                "View department budgets",
                 "Exit",
             ],
     })
-.then((data) => {
-    console.log("You've chosen: " + data.select);
-    switch (data.select) {
+.then((answer) => {
+    console.log("You've chosen: " + answer.select);
+    switch (answer.select) {
         case "View all employees":
-        viewEmploy();
+        viewAllEmploy();
         break;
 
         case "View departments":
@@ -54,18 +47,6 @@ const init = () => {
 
         case "View roles":
         viewRole();
-        break;
-
-        case "View all employees by role":
-        viewByRole();
-        break;
-
-        case "View all employees by department":
-        viewByDep();
-        break;
-
-        case "View all employees by manager":
-        viewByManager();
         break;
 
         case "Add employee":
@@ -81,23 +62,7 @@ const init = () => {
         break;
 
         case "Update employee role":
-        updateRole();
-        break;
-
-        case "Delete employee":
-        deleteEmploy();
-        break;
-
-        case "Delete role":
-        deleteRole();
-        break;
-
-        case "Delete department":
-        deleteDep();
-        break;
-
-        case "View department budgets":
-        viewBudget();
+        updateEmploy();
         break;
 
         case "Exit":
@@ -111,53 +76,37 @@ const init = () => {
   });
 };
 
-// View all employees
-const viewEmploy = () => {
-    connection.query('SELECT * FROM employee', (err, results) => {
-      if (err) throw err;
-      console.table(results);
-      console.log("Success");
-      init();
-    }
-  );
+const viewAllEmploy = () => {
+    console.log("View all Employees")
+    const query = 'SELECT * FROM employee';
+    connection.query(query, (err, res) => {
+        if(err) throw err;
+        console.table(res);
+        init();
+    })
 };
 
 const viewDep = () => {
-    connection.query('SELECT id, department_name AS Departments FROM department', 
-    (err, results) => {
+    const query = 'SELECT department_name AS Department FROM department';
+    connection.query(query, (err, res) => {
         if (err) throw err;
-        console.table(results);
+        console.table(res);
         init();
-      }
-    );
+    });
 };
 
 const viewRole = () => {
-    connection.query(
-      `SELECT role.title, role.salary, department.name AS department FROM role INNER JOIN department ON role.department_id = department.id `,
-      (err, results) => {
+    const query = 'SELECT title AS Role, salary AS Salary, department_id AS Department FROM role';
+    connection.query(query, (err, res) => {
         if (err) throw err;
-        console.log("Success");
-        console.table(results);
+        console.table(res);
         init();
-      }
-    );
-  };
+    })
+}
 
-const viewByManager = () => {
-    connection.query(
-      `SELECT CONCAT(manager.first_name, " ", manager.last_name) AS manager, CONCAT (employee.first_name, " ",employee.last_name) AS employee
-    FROM employee manager
-    INNER JOIN employee ON manager.id = employee.manager_id;`,
-      (err, results) => {
-        if (err) throw err;
-        console.table(results);
-        init();
-      }
-    );
-};
 
 const addNewEmploy = () => {
+    console.log('Adding a New Employee');
     inquirer
       .prompt([
           {
@@ -190,77 +139,73 @@ const addNewEmploy = () => {
         connection.query(query, function(err, results) {
           if (err) throw err;
           console.table(results);
+          console.log("Employee successfully added!");
           init();
         });
-      });
-  }
-//       .then((answer) => {
-//         if (answer.manager === "No Manager") {
+    });
+};
+
+const addRole = () => {
+    // connection.query("SELECT role.title AS Title, role.salary AS Salary FROM role", 
+    // (err, res) => {
+    //   if (err) throw err;
   
-//           let roleId = allRoles.indexOf(answer.role) + 1;
-  
-//           connection.query(
-//             'INSERT INTO employee SET ?', {
-//               first_name: answer.f_name,
-//               last_name: answer.l_name,
-//               role_id: roleId,
-  
-//             },
-//             (err) => {
-//               if (err) throw err;
-//               console.log('Your employee was created successfully!');
-//               start();
-//             }
-//           );
-//         } else {
-  
-//           let roleId = allRoles.indexOf(answer.role) + 1;
-//           let managerId = allManagers.indexOf(answer.manager) + 1;
-  
-//           connection.query(
-//             'INSERT INTO employee SET ?', {
-//               first_name: answer.f_name,
-//               last_name: answer.l_name,
-//               role_id: roleId,
-//               manager_id: managerId,
-//             },
-//             (err) => {
-//               if (err) throw err;
-//               console.log('Your employee was created successfully!');
-//               start();
-//             }
-//           );
-//         }
-//       });
-//   };
+      inquirer
+        .prompt([
+          {
+            name: 'roleTitle',
+            type: 'input',
+            message: 'What is the role title?',
+          },
+          {
+            name: 'salary',
+            type: 'input',
+            message: 'What is the salary?',
+          },
+          {
+            name: 'departmentId',
+            type: 'input',
+            message: 'What is the department id',
+          }
+        ])
+        .then((answer) => {
+          connection.query(
+            'INSERT INTO role SET ?',
+            {
+              title: answer.roleTitle,
+              salary: answer.salary,
+              department_id: answer.departmentId
+            },
+            (err) => {
+                if (err) throw err;
+              console.log("New Role has been added!");
+              init();
+            }
+        
+        );
+    });
+};
 
-//   var allRoles = [];
-
-// function selectRole() {
-//   connection.query("SELECT * FROM role", function (err, res) {
-//     if (err) throw err
-//     for (var i = 0; i < res.length; i++) {
-//       allRoles.push(res[i].role_title);
-//     }
-
-//   })
-
-//   return allRoles;
-// }
-
-// var allManagers = [];
-
-// function selectManager() {
-//   connection.query("SELECT DISTINCT CONCAT( e2.first_name, ' ', e2.last_name ) AS Manager, e1.manager_id FROM employee e1 INNER JOIN employee e2 ON e2.id = e1.manager_id WHERE e1.manager_id IS NOT NULL;",
-//     function (err, res) {
-
-//       if (err) throw err
-//       for (var i = 0; i < res.length; i++) {
-//         allManagers.push(res[i].Manager);
-//       }
-//       allManagers.push("No Manager");
-//     })
-//   return allManagers;
-// }
-
-  
+const addDep = () => {
+    console.log('Adding new department');
+    inquirer.prompt([
+        {
+            name: 'name',
+            type: 'input',
+            message: 'What department would you like to add?',
+        }
+    ])
+    .then((answer) => {
+        connection.query(
+            'INSERT INTO department SET ?',
+            {
+                department_name: answer.name,
+            },
+            (err) => {
+                if (err) throw err;
+                console.log('New department has been added!');
+                init();
+            }
+        );
+    });
+};
