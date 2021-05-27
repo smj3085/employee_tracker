@@ -3,7 +3,7 @@ USE employees_db;
 ----- Department Seeds -----
 
 INSERT INTO department (id, department_name)
-VALUES (1, "Sales");
+VALUES (1, "Sales");                                                                        
 
 INSERT INTO department (id, department_name)
 VALUES (2, "IT");

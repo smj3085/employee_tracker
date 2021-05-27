@@ -1,7 +1,6 @@
-const mysql = require('mysql'); // For connecting to the MySQL database
-const inquirer = require('inquirer'); // For interacting with the user via the command-line
-const consoleTable = require('console.table'); // For printing MySQL rows to the console in an attractive fashion.
-const { connect } = require('node:http2');
+const mysql = require('mysql'); 
+const inquirer = require('inquirer'); 
+const consoleTable = require('console.table'); 
 
 const connection = mysql.createConnection({
     host: 'localhost',
@@ -13,7 +12,7 @@ const connection = mysql.createConnection({
 
 connection.connect((err) => {
     if (err) throw err;
-    console.log("Welcome to the Employee tracker");
+    console.log("----------Welcome to the Employee tracker-----------");
     init();
 })
 
@@ -30,7 +29,7 @@ const init = () => {
                 "Add employee",
                 "Add role",
                 "Add department",
-                "Update employee role",
+                "Delete employee ID",
                 "Exit",
             ],
     })
@@ -104,8 +103,15 @@ const viewRole = () => {
         console.table(res);
         init();
     })
-}
+};
 
+const viewEmployeeSimple = () => {
+    const query = 'SELECT employee.id, employee.first_name, employee.last_name, role.title, employee.manager_id AS manager FROM employee LEFT JOIN role on employee.role_id = role.id LEFT JOIN department on role.department_id = department.id LEFT JOIN employee manager on manager.id = employee.manager_id';
+    connection.query(query, (err, res) => {
+        if(err) throw err;
+        console.table(res);
+    })
+};
 
 const addNewEmploy = () => {
     inquirer.prompt([
@@ -138,7 +144,7 @@ const addNewEmploy = () => {
                   last_name: answer.last_name, 
                   role_id: answer.roleId,
                   manager_id: answer.managerId,
-                },
+                },      
                 (err) => {
                   if(err) throw err;
                   console.log("Employee successfully created!");
@@ -146,7 +152,7 @@ const addNewEmploy = () => {
                 }
             );
         });
-};
+        };
 
 const addRole = () => {
     inquirer.prompt([
@@ -173,7 +179,7 @@ const addRole = () => {
               title: answer.roleTitle,
               salary: answer.salary,
               department_id: answer.departmentId
-            },
+            },        
             (err) => {
                 if (err) throw err;
               console.log("New Role has been added!");
@@ -203,6 +209,35 @@ const addDep = () => {
                 init();
             }
         );
+    });
+};
+
+
+
+const deleteEmployee = () => {
+    
+    viewEmployeeSimple();
+
+    inquirer.prompt([
+        {
+            name: 'employeeId',
+            type: 'input',
+            message: 'What is the ID of the employee to delete?',
+        },
+    ])
+    .then((answer) => {
+    connection.query(
+            'DELETE FROM employee WHERE ?',
+            {
+                id: answer.employeeId,
+            },
+            (err) => {
+                if (err) throw err;
+                console.log('Your employee has been deleted!');
+                init();
+            }
+        );
+    
     });
 };
 
@@ -240,26 +275,3 @@ const addDep = () => {
 //             });
 //         };
 
-const deleteEmployee = () => {
-    viewAllEmploy();
-    inquirer.prompt([
-        {
-            name: 'employeeId',
-            type: 'input',
-            message: 'What is the ID of the employee to delete?',
-        },
-    ])
-    .then((answer) => {
-    connection.query(
-            'DELETE FROM employee WHERE ?',
-            {
-                id: answer.employeeId,
-            },
-            (err) => {
-                if (err) throw err;
-                console.log('Your employee has been deleted!');
-                init();
-            }
-        );
-    });
-};
